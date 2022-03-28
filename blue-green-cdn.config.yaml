@@ -1,0 +1,55 @@
+behaviour_defaults: &behaviour_defaults
+  AllowedMethods:
+    - GET
+    - HEAD
+  Compress: true
+  ForwardedValues:
+    Cookies:
+      Forward: none
+    QueryString: true
+  ViewerProtocolPolicy: redirect-to-https
+
+buckets:
+  blue:
+    bucket_name: ${BlueBucketName}
+    bucket_encryption:
+      ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+    bucket_policy:
+      allow_all_ro:
+        actions:
+          - s3:GetObject
+        principal:
+          AWS: "*"
+  green:
+    bucket_name: ${GreenBucketName}
+    bucket_encryption:
+      ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+    bucket_policy:
+      allow_all_ro:
+        actions:
+          - s3:GetObject
+        principal:
+          AWS: "*"
+
+cdn:
+  comment: 'Blue Green - ${EnvironmentName} CDN'
+  enable_s3_logging: false
+  ipv6: True
+  origins:
+    blue:
+      source: s3
+    green:
+      source: s3
+  default_root_object: 'index.html'
+  behaviours:
+    default:
+      TargetOriginId: blue
+      <<: *behaviour_defaults
+  custom_error_responses:
+  - ErrorCode: 404
+    ResponseCode: 200
+    ResponsePagePath: '/index.html'
